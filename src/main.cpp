@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <cstdio>
@@ -20,6 +21,7 @@ GLFWwindow* createWindow(unsigned int w, unsigned int h)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
 	GLFWwindow* win = glfwCreateWindow(w, h, "raycast", NULL, NULL);
 	if (win == NULL)
 	{
@@ -42,8 +44,6 @@ void process_input(GLFWwindow* window)
 	}
 }
 
-// Data
-
 void initVAO(unsigned int &VAO, unsigned int &VBO)
 {
 	float vertices[4] = {
@@ -61,7 +61,9 @@ void initVAO(unsigned int &VAO, unsigned int &VBO)
 	glEnableVertexAttribArray(0);
 }
 
-void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, float x1, float y1)
+// Utils
+
+void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, float x1, float y1, glm::vec4 &color)
 {
 	glUseProgram(program);
 	
@@ -71,15 +73,55 @@ void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, floa
 	model = glm::translate(model, glm::vec3(position, 0.0f));
 	model = glm::scale(model, glm::vec3(size, 1.0f));
 	glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(color));
 
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_LINES, 0, 2);
 }
 
+#define mapWidth 24
+#define mapHeight 24
+
+int worldMap[mapWidth][mapHeight] =
+{
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,2,2,2,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1},
+	{1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,3,0,0,0,3,0,0,0,1},
+	{1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,4,0,0,0,0,5,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+};
+
+// colors
+
+glm::vec4 red(1.0f, 0.0f, 0.0f, 1.0f);
+glm::vec4 green(0.0f, 1.0f, 0.0f, 1.0f);
+glm::vec4 blue(0.0f, 0.0f, 1.0f, 1.0f);
+glm::vec4 white(1.0f, 1.0f, 1.0f, 1.0f);
+glm::vec4 yellow(1.0f, 1.0f, 0.0f, 1.0f);
+
 int main()
 {
-	unsigned int w = 800;
-	unsigned int h = 600;
+	int w = 800;
+	int h = 600;
 
 	GLFWwindow* win = createWindow(w, h);
 	if (win == NULL)
@@ -110,20 +152,140 @@ int main()
 
 	float clearColor[4] = {0.2f, 0.2f, 0.2f, 1.0f};
 
+	// vars
+	glm::vec2 position(22.0f, 12.0f);
+	glm::vec2 direction(-1.0f, 0.0f);
+	glm::vec2 plane(0.0f, 0.66f);
+	float lastTime = 0.0f, deltaTime = 0.0f;
+
 	while (!glfwWindowShouldClose(win))
 	{
 		process_input(win);
+		float currentTime = glfwGetTime();
+		deltaTime = currentTime - lastTime;
+		lastTime = currentTime;
+
+		float moveSpeed = deltaTime * 5.0f;
+		float rotateSpeed = deltaTime * 5.0;
+
+		if (glfwGetKey(win, GLFW_KEY_UP) == GLFW_PRESS)
+		{
+			position += direction * moveSpeed;
+		}
+
+		if (glfwGetKey(win, GLFW_KEY_DOWN) == GLFW_PRESS)
+		{
+			position -= direction * moveSpeed;
+		}
+
+		if (glfwGetKey(win, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		{
+			direction = glm::rotate(direction, -glm::radians(10.0f * rotateSpeed));
+			plane = glm::rotate(plane, -glm::radians(10.0f * rotateSpeed));;
+		}
+
+		if (glfwGetKey(win, GLFW_KEY_LEFT) == GLFW_PRESS)
+		{
+			direction = glm::rotate(direction, glm::radians(10.0f * rotateSpeed));
+			plane = glm::rotate(plane, glm::radians(10.0f * rotateSpeed));;
+		}
+
 		glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		double xpos, ypos;
-		glfwGetCursorPos(win, &xpos, &ypos);
+		for (int x = 0; x < w; x++)
+		{
+			float cameraX = 2 * x / float(w) - 1.0f; // on the camera plane: left (x=0) = -1.0, middle (x=w/2) = 0.0, right (x=w) = 1.0
+			glm::vec2 rayDirection = direction + plane * cameraX; // rayDirection goes trough all length of camera plane
+			
+			// which box of the map we're in
+			int mapX = int(position.x);
+			int mapY = int(position.y);
 
-		float x0 = 400.0f;
-		float y0 = 300.0f;
-		float x1 = xpos;
-		float y1 = ypos;
-		drawLine(VAO, program, x0, y0, x1, y1);
+			// length of ray from current position to next x/y side
+			float sideDistX, sideDistY;
+			// length of ray from one x/y side to next x/y side (mini hypotenuse)
+			float deltaDistX = std::abs(1.0f / rayDirection.x); // constant for current rayDirection
+			float deltaDistY = std::abs(1.0f / rayDirection.y); // constant for current rayDirection
+
+			bool hit = false;
+			int side = 0; // 0 = x-side, 1 = y-side
+
+			int stepX, stepY;
+
+			if (rayDirection.x < 0.0f)
+			{
+				stepX = -1;
+				sideDistX = (position.x - mapX) * deltaDistX; // perpendicular(x side) * mini hypotenuse(x side) = real delta distance(x side)
+			}
+			else
+			{
+				stepX = 1;
+				sideDistX = (mapX + 1.0f - position.x) * deltaDistX;
+			}
+
+			if (rayDirection.y < 0.0f)
+			{
+				stepY = -1;
+				sideDistY = (position.y - mapY) * deltaDistY;
+			}
+			else
+			{
+				stepY = 1;
+				sideDistY = (mapY + 1.0f - position.y) * deltaDistY;
+			}
+
+			// Digital Differential Analyzer
+			while (!hit)
+			{
+				if (sideDistX < sideDistY)
+				{
+					sideDistX += deltaDistX;
+					mapX += stepX;
+					side = 0;
+				}
+				else
+				{
+					sideDistY += deltaDistY;
+					mapY += stepY;
+					side = 1;
+				}
+
+				if (worldMap[mapX][mapY] > 0) hit = true;
+			}
+
+			float perpWallDist;
+
+			if (side == 0)
+			{
+				perpWallDist = (mapX - position.x + (1 - stepX) / 2) / rayDirection.x;
+			}
+			else
+			{
+				perpWallDist = (mapY - position.y + (1 - stepY) / 2) / rayDirection.y;
+			}
+
+			int lineHeight = int(h / perpWallDist); // the higher dist to the wall, the less result line height
+			int drawStart = -lineHeight / 2 + h / 2; // y-center - half of the line
+			if (drawStart < 0) drawStart = 0; // clamping
+			int drawEnd = lineHeight / 2 + h / 2; // y-center + half of the line
+			if (drawEnd >= h) drawEnd = h - 1; // clamping
+
+			glm::vec4 color = yellow;
+
+			switch (worldMap[mapX][mapY])
+			{
+				case 1: color = red; break;
+				case 2: color = green; break;
+				case 3: color = blue; break;
+				case 4: color = white; break;
+				default: color = yellow; break;
+			}
+
+			if (side == 1) { color = color / 2.0f; }
+
+			drawLine(VAO, program, float(x), float(drawStart), float(x), float(drawEnd), color);
+		}
 
 		glfwSwapBuffers(win);
 		glfwPollEvents();
