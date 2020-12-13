@@ -8,8 +8,9 @@ GLAD_SRC = $(GLAD)/src/glad.c
 GLAD_INC = $(GLAD)/include
 
 GLM = $(LIB)/glm
+STB_IMAGE = $(LIB)/stb_image
 
-INC = -I$(GLAD_INC) -I$(LIB) -I$(GLM)
+INC = -I$(GLAD_INC) -I$(LIB) -I$(GLM) -I$(STB_IMAGE)
 LDLIBS = -lX11 -lglfw3 -lGL -lpthread -ldl
 CFLAGS = -Wall -I$(GLAD_INC)
 CXXFLAGS = -std=c++11 -Wall $(INC)

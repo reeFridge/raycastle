@@ -7,6 +7,7 @@
 #include <cstdio>
 
 #include "./utils/shader.h"
+#include "./utils/texture.h"
 
 // Window
 
@@ -46,9 +47,12 @@ void process_input(GLFWwindow* window)
 
 void initVAO(unsigned int &VAO, unsigned int &VBO)
 {
-	float vertices[4] = {
+	float vertices[8] = {
 		0.0f, 0.0f,
-		1.0f, 1.0f
+		0.0f,
+		
+		1.0f, 1.0f,
+		1.0f
 	};
 
 	glGenVertexArrays(1, &VAO);
@@ -57,13 +61,15 @@ void initVAO(unsigned int &VAO, unsigned int &VBO)
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 }
 
 // Utils
 
-void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, float x1, float y1, glm::vec4 &color)
+void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, float x1, float y1, glm::vec4 &color, float texX)
 {
 	glUseProgram(program);
 	
@@ -74,6 +80,7 @@ void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, floa
 	model = glm::scale(model, glm::vec3(size, 1.0f));
 	glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 	glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(color));
+	glUniform1f(glGetUniformLocation(program, "texX"), texX);
 
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_LINES, 0, 2);
@@ -120,8 +127,8 @@ glm::vec4 yellow(1.0f, 1.0f, 0.0f, 1.0f);
 
 int main()
 {
-	int w = 800;
-	int h = 600;
+	int w = 1024;
+	int h = 768;
 
 	GLFWwindow* win = createWindow(w, h);
 	if (win == NULL)
@@ -136,6 +143,7 @@ int main()
 		return -1;
 	}
 
+	unsigned int container_tex = texture::loadTexture("./textures/pics/greystone.png");
 	unsigned int vs = shader::loadFromFile("./shaders/vertex.glsl", GL_VERTEX_SHADER);
 	unsigned int fs = shader::loadFromFile("./shaders/fragment.glsl", GL_FRAGMENT_SHADER);
 	unsigned int program = shader::createProgram(vs, fs);
@@ -145,6 +153,7 @@ int main()
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(w), static_cast<float>(h), 0.0f, -1.0f, 1.0f);
 
 	glUseProgram(program);
+	glUniform1i(glGetUniformLocation(program, "fTexture"), 0);
 	glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	unsigned int VAO, VBO;
@@ -192,6 +201,9 @@ int main()
 
 		glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, container_tex);
 
 		for (int x = 0; x < w; x++)
 		{
@@ -284,7 +296,18 @@ int main()
 
 			if (side == 1) { color = color / 2.0f; }
 
-			drawLine(VAO, program, float(x), float(drawStart), float(x), float(drawEnd), color);
+			float wallX; //where exactly the wall was hit
+			if (side == 0)
+			{
+				wallX = position.y + perpWallDist * rayDirection.y;
+			}
+			else
+			{
+				wallX = position.x + perpWallDist * rayDirection.x;
+			}
+			wallX -= floor(wallX);
+
+			drawLine(VAO, program, float(x), float(drawStart), float(x), float(drawEnd), color, wallX);
 		}
 
 		glfwSwapBuffers(win);
