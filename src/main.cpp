@@ -69,7 +69,7 @@ void initVAO(unsigned int &VAO, unsigned int &VBO)
 
 // Utils
 
-void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, float x1, float y1, glm::vec4 &color, float texX)
+void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, float x1, float y1, glm::vec4 &color, float texX, unsigned int &texture)
 {
 	glUseProgram(program);
 	
@@ -80,6 +80,10 @@ void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, floa
 	model = glm::scale(model, glm::vec3(size, 1.0f));
 	glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 	glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(color));
+		
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
 	glUniform1f(glGetUniformLocation(program, "texX"), texX);
 
 	glBindVertexArray(VAO);
@@ -91,30 +95,30 @@ void drawLine(unsigned int &VAO, unsigned int &program, float x0, float y0, floa
 
 int worldMap[mapWidth][mapHeight] =
 {
-	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,2,2,2,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1},
-	{1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,3,0,0,0,3,0,0,0,1},
-	{1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,4,0,0,0,0,5,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+	{4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,7,7,7,7,7,7,7,7},
+	{4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,7},
+	{4,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7},
+	{4,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7},
+	{4,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,7},
+	{4,0,4,0,0,0,0,5,5,5,5,5,5,5,5,5,7,7,0,7,7,7,7,7},
+	{4,0,5,0,0,0,0,5,0,5,0,5,0,5,0,5,7,0,0,0,7,7,7,1},
+	{4,0,6,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,0,0,0,8},
+	{4,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,1},
+	{4,0,8,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,0,0,0,8},
+	{4,0,0,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,7,7,7,1},
+	{4,0,0,0,0,0,0,5,5,5,5,0,5,5,5,5,7,7,7,7,7,7,7,1},
+	{6,6,6,6,6,6,6,6,6,6,6,0,6,6,6,6,6,6,6,6,6,6,6,6},
+	{8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
+	{6,6,6,6,6,6,0,6,6,6,6,0,6,6,6,6,6,6,6,6,6,6,6,6},
+	{4,4,4,4,4,4,0,4,4,4,6,0,6,2,2,2,2,2,2,2,3,3,3,3},
+	{4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,0,0,0,2},
+	{4,0,0,0,0,0,0,0,0,0,0,0,6,2,0,0,5,0,0,2,0,0,0,2},
+	{4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,2,0,2,2},
+	{4,0,6,0,6,0,0,0,0,4,6,0,0,0,0,0,5,0,0,0,0,0,0,2},
+	{4,0,0,5,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,2,0,2,2},
+	{4,0,6,0,6,0,0,0,0,4,6,0,6,2,0,0,5,0,0,2,0,0,0,2},
+	{4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,0,0,0,2},
+	{4,4,4,4,4,4,4,4,4,4,1,1,1,2,2,2,2,2,2,3,3,3,3,3}
 };
 
 // colors
@@ -143,7 +147,16 @@ int main()
 		return -1;
 	}
 
-	unsigned int container_tex = texture::loadTexture("./textures/pics/greystone.png");
+	unsigned int textures[8];
+	textures[0] = texture::loadTexture("./textures/pics/greystone.png");
+	textures[1] = texture::loadTexture("./textures/pics/bluestone.png");
+	textures[2] = texture::loadTexture("./textures/pics/colorstone.png");
+	textures[3] = texture::loadTexture("./textures/pics/eagle.png");
+	textures[4] = texture::loadTexture("./textures/pics/redbrick.png");
+	textures[5] = texture::loadTexture("./textures/pics/wood.png");
+	textures[6] = texture::loadTexture("./textures/pics/purplestone.png");
+	textures[7] = texture::loadTexture("./textures/pics/mossy.png");
+
 	unsigned int vs = shader::loadFromFile("./shaders/vertex.glsl", GL_VERTEX_SHADER);
 	unsigned int fs = shader::loadFromFile("./shaders/fragment.glsl", GL_FRAGMENT_SHADER);
 	unsigned int program = shader::createProgram(vs, fs);
@@ -175,7 +188,7 @@ int main()
 		lastTime = currentTime;
 
 		float moveSpeed = deltaTime * 5.0f;
-		float rotateSpeed = deltaTime * 5.0;
+		float rotateSpeed = deltaTime * 7.0;
 
 		if (glfwGetKey(win, GLFW_KEY_UP) == GLFW_PRESS)
 		{
@@ -202,8 +215,6 @@ int main()
 		glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, container_tex);
 
 		for (int x = 0; x < w; x++)
 		{
@@ -307,7 +318,7 @@ int main()
 			}
 			wallX -= floor(wallX);
 
-			drawLine(VAO, program, float(x), float(drawStart), float(x), float(drawEnd), color, wallX);
+			drawLine(VAO, program, float(x), float(drawStart), float(x), float(drawEnd), white, wallX, textures[worldMap[mapX][mapY] - 1]);
 		}
 
 		glfwSwapBuffers(win);
